@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <declare-styleable name="DoraTabBar">
+        <attr name="dora_indicatorHeight" format="dimension|reference" />
+        <attr name="dora_indicatorColor" format="color|reference" />
+        <attr name="dora_tabHorizontalPadding" format="dimension|reference" />
+        <attr name="dora_tabVerticalPadding" format="dimension|reference" />
+        <attr name="dora_tabColor" format="color|reference" />
+        <attr name="dora_tabTextSize" format="dimension|reference" />
+        <attr name="dora_tabTextColor" format="color|reference" />
+        <attr name="dora_tabSelectedTextColor" format="color|reference" />
+        <attr name="dora_isDivide" format="boolean" />
+        <attr name="dora_textAllCaps" format="boolean" />
+    </declare-styleable>
+</resources>

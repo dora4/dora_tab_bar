@@ -12,7 +12,7 @@
 
 ### 照片
 
-![avatar](https://github.com/dora4/dora_tab_bar/blob/main/art/dora_tab_bar.png)
+![avatar](https://github.com/dora4/dora_tab_bar/blob/main/art/dora_tab_bar.jpg)
 
 ### 动图
 

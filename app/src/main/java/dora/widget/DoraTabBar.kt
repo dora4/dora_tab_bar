@@ -1,5 +1,8 @@
 package dora.widget
 
+import android.animation.Animator
+import android.animation.TypeEvaluator
+import android.animation.ValueAnimator
 import android.content.Context
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
@@ -9,21 +12,16 @@ import android.os.Looper
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.View
+import android.view.animation.LinearInterpolator
 
 class DoraTabBar @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : HorizontalScrollView(context, attrs, defStyleAttr) {
 
-    var position = 0
-    set(position) {
-        if (position != field) {
-            field = position
-            updateSelectedTab()
-        }
-    }
+    private var position = 0
+    private var toPosition = 0
     private var positionOffset = 0f
-        private set
     private lateinit var wrappedTabLayoutParams: LinearLayout.LayoutParams
     private lateinit var divideTabLayoutParams: LinearLayout.LayoutParams
     private var tabContainer: LinearLayout = LinearLayout(context)
@@ -33,11 +31,10 @@ class DoraTabBar @JvmOverloads constructor(
     private var tabTextColor = Color.BLACK
     private var indicatorHeight = 10
     private var indicatorColor = Color.BLACK
-    private var tabHorizontalPadding = 10
-    private var tabVerticalPadding = 10
+    private var tabHorizontalPadding = 20
+    private var tabVerticalPadding = 15
     private var tabColor = Color.TRANSPARENT
     private var selectedTabTextColor = 0
-        private set
     private var textAllCaps = true
     private var rectPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var onTabClickListener: OnTabClickListener? = null
@@ -103,12 +100,13 @@ class DoraTabBar @JvmOverloads constructor(
         if (currentTab != null) {
             var left = currentTab.left.toFloat()
             var right = currentTab.right.toFloat()
-            if (positionOffset > 0f && position < tabCount - 1) {
-                val nextTab = tabContainer.getChildAt(position + 1)
-                val nextTabLeft = nextTab.left.toFloat()
-                val nextTabRight = nextTab.right.toFloat()
-                left = positionOffset * nextTabLeft + (1f - positionOffset) * left
-                right = positionOffset * nextTabRight + (1f - positionOffset) * right
+            if (positionOffset > 0f && position >= 0 && position < tabCount - 1 && toPosition >=0
+                    && toPosition < tabCount - 1) {
+                val moveToTab = tabContainer.getChildAt(toPosition)
+                val tabLeft = moveToTab.left.toFloat()
+                val tabRight = moveToTab.right.toFloat()
+                left = positionOffset * tabLeft + (1f - positionOffset) * left
+                right = positionOffset * tabRight + (1f - positionOffset) * right
             }
             indicatorRect[left, (height - indicatorHeight).toFloat(), right] =
                     height.toFloat()
@@ -133,11 +131,51 @@ class DoraTabBar @JvmOverloads constructor(
     /**
      * 通常使用在跟viewPager联动。
      */
-    fun offsetTab(position: Int, positionOffset: Float) {
+    fun offsetTabForViewPager(position: Int, positionOffset: Float) {
+        toPosition = position + 1
+        offsetTab(position, positionOffset)
+    }
+
+    private fun offsetTab(position: Int, positionOffset: Float) {
         if (position != this.position || positionOffset != this.positionOffset) {
             this.position = position
             this.positionOffset = positionOffset
             updateSelectedTab()
+        }
+    }
+
+    fun offsetTabOnClick(position: Int) {
+        toPosition = position
+        val animator = ValueAnimator.ofObject(
+                AnimationEvaluator(), 0, 1)
+        animator.addUpdateListener { animation: ValueAnimator ->
+            val value = animation.animatedValue as Float
+            offsetTab(this.position, value)
+            invalidate()
+        }
+        animator.interpolator  = LinearInterpolator()
+        animator.setDuration(300).start()
+        animator.addListener(object : Animator.AnimatorListener {
+            override fun onAnimationStart(animation: Animator) {}
+            override fun onAnimationEnd(animation: Animator) {
+                this@DoraTabBar.position = position
+                positionOffset = 0f
+                toPosition = position + 1
+                updateSelectedTab()
+            }
+
+            override fun onAnimationCancel(animation: Animator) {}
+            override fun onAnimationRepeat(animation: Animator) {}
+        })
+    }
+
+    private inner class AnimationEvaluator : TypeEvaluator<Float> {
+        override fun evaluate(fraction: Float, startValue: Float, endValue: Float): Float {
+            return if (endValue > startValue) {
+                startValue + fraction * (endValue - startValue)
+            } else {
+                startValue - fraction * (startValue - endValue)
+            }
         }
     }
 
@@ -183,6 +221,11 @@ class DoraTabBar @JvmOverloads constructor(
         }
     }
 
+    fun setSelectedPosition(position: Int) {
+        this.position = position
+        updateSelectedTab()
+    }
+
     fun updateSelectedTab() {
         for (index in 0 until tabTitles.size) {
             val tabView = getTabView(index) as TextView
@@ -214,8 +257,7 @@ class DoraTabBar @JvmOverloads constructor(
         textTab.isFocusable = true
         textTab.setPaddingRelative(tabHorizontalPadding, tabVerticalPadding, tabHorizontalPadding, tabVerticalPadding)
         textTab.setOnClickListener { v ->
-            this.position = position
-            updateSelectedTab()
+            offsetTabOnClick(position)
             onTabClickListener?.onTabClick(v, position)
         }
         tabContainer.addView(

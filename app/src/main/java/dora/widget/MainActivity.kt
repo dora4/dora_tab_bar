@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         viewPager.setOnPageChangeListener(object : ViewPager.OnPageChangeListener {
             override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
                 if (isScrolling) {
-                    tabBar.offsetTab(position, positionOffset)
+                    tabBar.offsetTabForViewPager(position, positionOffset)
                 }
             }
 

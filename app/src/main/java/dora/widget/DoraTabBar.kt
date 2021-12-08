@@ -160,7 +160,6 @@ class DoraTabBar @JvmOverloads constructor(
             override fun onAnimationEnd(animation: Animator) {
                 this@DoraTabBar.position = position
                 positionOffset = 0f
-                toPosition = position + 1
                 updateSelectedTab()
             }
 
